@@ -1143,6 +1143,7 @@ clGetDeviceInfo(cl_device_id    device,
    case CL_DEVICE_MAX_COMPUTE_UNITS: CL_UINT_CASE( device->the_device()->get_config().num_shader() ); break;
    case CL_DEVICE_MAX_CLOCK_FREQUENCY: CL_UINT_CASE( device->the_device()->shader_clock() ); break;
    case CL_DEVICE_VENDOR:CL_STRING_CASE("GPGPU-Sim.org"); break;
+   case CL_DEVICE_PLATFORM:CL_STRING_CASE("GPGPU-Sim OpenCL platform"); break;
    case CL_DEVICE_VERSION: CL_STRING_CASE("OpenCL 1.0"); break;
    case CL_DRIVER_VERSION: CL_STRING_CASE("1.0"); break;
    case CL_DEVICE_TYPE: CL_CASE(cl_device_type, CL_DEVICE_TYPE_GPU); break;
