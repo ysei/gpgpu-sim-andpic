@@ -64,14 +64,8 @@ else # MAC
 	TARGETS += $(SIM_LIB_DIR)/libcudart.dylib
 endif
 
-ifeq  ($(NVOPENCL_LIBDIR),)
-	TARGETS += no_opencl_support
-else ifeq ($(NVOPENCL_INCDIR),)
-	TARGETS += no_opencl_support
-else
-	TARGETS += $(SIM_LIB_DIR)/libOpenCL.so
-endif
-	TARGETS += cuobjdump_to_ptxplus/cuobjdump_to_ptxplus
+TARGETS += $(SIM_LIB_DIR)/libOpenCL.so
+TARGETS += cuobjdump_to_ptxplus/cuobjdump_to_ptxplus
 
 MCPAT=
 MCPAT_OBJ_DIR=
