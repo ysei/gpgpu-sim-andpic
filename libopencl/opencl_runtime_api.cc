@@ -181,6 +181,9 @@ struct _cl_program {
              const size_t *    lengths );
    void Build(const char *options);
    cl_kernel CreateKernel( const char *kernel_name, cl_int *errcode_ret );
+   std::vector<cl_kernel> CreateKernels(  cl_uint num_kernels,
+                                          cl_uint *num_kernels_ret,
+                                          cl_int *errcode_ret);
    cl_context get_context() { return m_context; }
    char *get_ptx();
    size_t get_ptx_size();
@@ -602,6 +605,58 @@ cl_kernel _cl_program::CreateKernel( const char *kernel_name, cl_int *errcode_re
       setErrCode( errcode_ret, CL_SUCCESS );
    }
    return result;
+}
+
+std::vector<cl_kernel> _cl_program::CreateKernels(  cl_uint num_kernels,
+                                                    cl_uint *num_kernels_ret,
+                                                    cl_int *errcode_ret)
+{
+   cl_kernel temp = NULL;
+   std::vector<cl_kernel> result;
+   class function_info *finfo = NULL;
+   cl_uint count = 0;
+   std::map<cl_uint,pgm_info>::iterator f;
+   std::string k_name;
+
+   setErrCode( errcode_ret, CL_SUCCESS);
+
+   // If num_kernels == 0, write the number of kernels in num_kernels_ret
+   if( num_kernels==0 ) {
+
+      for( f = m_pgm.begin(); f!= m_pgm.end(); f++ ) {
+         pgm_info &info=f->second;
+         std::map<std::string,function_info*>::iterator k;
+      
+         count+=info.m_kernels.size();
+      }
+      *num_kernels_ret = count;
+   } else {
+      
+   // Else create all available kernels
+      for( f = m_pgm.begin(); f!= m_pgm.end(); f++ ) {
+         pgm_info &info=f->second;
+         std::map<std::string,function_info*>::iterator k;
+         
+         if( count==num_kernels )
+            break;
+
+         for(k=info.m_kernels.begin(); k!=info.m_kernels.end(); k++)
+         {
+            finfo = k->second;
+          
+            if( finfo == NULL ) 
+               setErrCode( errcode_ret, CL_INVALID_PROGRAM_EXECUTABLE );
+            else { 
+               temp = new _cl_kernel(this, k->first.c_str(), finfo);
+               result.push_back(temp);
+            }
+        
+            if( ++count== num_kernels )
+               break;
+        }
+      }
+   }
+   return result;               
 }
 
 char *_cl_program::get_ptx()
@@ -1449,6 +1504,7 @@ clGetSupportedImageFormats(cl_context           context,
    return CL_SUCCESS;
 }
 
+
 extern CL_API_ENTRY void * CL_API_CALL
 clEnqueueMapBuffer(cl_command_queue command_queue,
                    cl_mem           buffer,
@@ -1476,5 +1532,48 @@ clSetCommandQueueProperty( cl_command_queue command_queue,
 {
    // TODO: do something here
    return CL_SUCCESS;
+}
+
+/*** Retain functions for the C++ API ***/
+extern CL_API_ENTRY cl_int CL_API_CALL
+clRetainMemObject(cl_mem memobj)
+{
+   return CL_SUCCESS;
+}
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clRetainEvent(cl_event event)
+{
+   return CL_SUCCESS;
+}
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clRetainKernel(cl_kernel kernel)
+{
+   return CL_SUCCESS;
+}
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clRetainDevice(cl_device_id device)
+{
+   return CL_SUCCESS;
+}
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clCreateKernelsInProgram(cl_program  program,
+                         cl_uint num_kernels,
+                         cl_kernel *kernels,
+                         cl_uint *num_kernels_ret)
+{
+   cl_int errcode = CL_SUCCESS;
+   std::vector<cl_kernel> krn(program->CreateKernels(num_kernels, num_kernels_ret, &errcode));
+   std::vector<cl_kernel>::iterator i;
+   size_t count = 0;
+
+   for( i=krn.begin(); i!=krn.end(); i++ ) {  
+      kernels[count++] = *i;
+   }
+
+   return errcode;
 }
 
