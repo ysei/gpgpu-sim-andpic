@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fstream>
+#include <string>
 
 /// globals
 
@@ -153,14 +154,23 @@ char* gpgpu_ptx_sim_convert_ptx_and_sass_to_ptxplus(const std::string ptxfilenam
 symbol_table *gpgpu_ptx_sim_load_ptx_from_string( const char *p, unsigned source_num )
 {
     char buf[1024];
+
+    /***** Workaround to fix generated ptx ********************************/
+
+    std::string   p_temp(p);
+    std::string   fix_01(".param .u64 .ptr .const");
+    p_temp.replace(  p_temp.find(fix_01), fix_01.length(), ".param .u64 .ptr");
+   
+    /*********************************************************************/
+
     snprintf(buf,1024,"_%u.ptx", source_num );
     if( g_save_embedded_ptx ) {
        FILE *fp = fopen(buf,"w");
-       fprintf(fp,"%s",p);
+       fprintf(fp,"%s", p_temp.c_str());
        fclose(fp);
     }
     symbol_table *symtab=init_parser(buf);
-    ptx__scan_string(p);
+    ptx__scan_string(p_temp.c_str());
     int errors = ptx_parse ();
     if ( errors ) {
         char fname[1024];
@@ -169,7 +179,7 @@ symbol_table *gpgpu_ptx_sim_load_ptx_from_string( const char *p, unsigned source
         close(fd);
         printf("GPGPU-Sim PTX: parser error detected, exiting... but first extracting .ptx to \"%s\"\n", fname);
         FILE *ptxfile = fopen(fname,"w");
-        fprintf(ptxfile,"%s", p );
+        fprintf(ptxfile,"%s", p_temp.c_str());
         fclose(ptxfile);
         abort();
         exit(40);
@@ -216,14 +226,14 @@ void gpgpu_ptxinfo_load_from_string( const char *p_for_info, unsigned source_num
     extra_flags[0]=0;
 
 #if CUDART_VERSION >= 3000
-    snprintf(extra_flags,1024,"--gpu-name=sm_20");
+    snprintf(extra_flags,1024,"--gpu-name=sm_21");
 #endif
 
-    snprintf(commandline,1024,"$CUDA_INSTALL_PATH/bin/ptxas %s -v %s --output-file  /dev/null 2> %s",
+    snprintf(commandline,1024,"$CUDA_INSTALL_PATH/bin/ptxas %s -v %s --output-file /dev/null | sed '/ gmem$/d' 2> %s",
              extra_flags, fname2, tempfile_ptxinfo);
     printf("GPGPU-Sim PTX: generating ptxinfo using \"%s\"\n", commandline);
     result = system(commandline);
-    if( result != 0 ) {
+    if( result != 0 && result != 65280 ) {
        printf("GPGPU-Sim PTX: ERROR ** while loading PTX (b) %d\n", result);
        printf("               Ensure ptxas is in your path.\n");
        exit(1);
