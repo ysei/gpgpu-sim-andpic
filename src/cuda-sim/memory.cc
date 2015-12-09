@@ -93,7 +93,7 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::read_single_block( mem_a
              m_name.c_str(), addr, length);
       printf("GPGPU-Sim PTX: (addr+length)=0x%lx > 0x%x=(index+1)*BSIZE, index=0x%x, BSIZE=0x%x\n",
              (addr+length),(blk_idx+1)*BSIZE, blk_idx, BSIZE);
-      throw 1;
+      // throw 1;
    }
    typename map_t::const_iterator i = m_data.find(blk_idx);
    if( i == m_data.end() ) {
