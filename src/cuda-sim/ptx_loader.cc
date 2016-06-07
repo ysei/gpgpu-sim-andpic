@@ -155,22 +155,14 @@ symbol_table *gpgpu_ptx_sim_load_ptx_from_string( const char *p, unsigned source
 {
     char buf[1024];
 
-    /***** Workaround to fix generated ptx ********************************/
-
-    std::string   p_temp(p);
-    std::string   fix_01(".param .u64 .ptr .const");
-    p_temp.replace(  p_temp.find(fix_01), fix_01.length(), ".param .u64 .ptr");
-   
-    /*********************************************************************/
-
     snprintf(buf,1024,"_%u.ptx", source_num );
     if( g_save_embedded_ptx ) {
        FILE *fp = fopen(buf,"w");
-       fprintf(fp,"%s", p_temp.c_str());
+       fprintf(fp,"%s", p);
        fclose(fp);
     }
     symbol_table *symtab=init_parser(buf);
-    ptx__scan_string(p_temp.c_str());
+    ptx__scan_string(p);
     int errors = ptx_parse ();
     if ( errors ) {
         char fname[1024];
@@ -179,7 +171,7 @@ symbol_table *gpgpu_ptx_sim_load_ptx_from_string( const char *p, unsigned source
         close(fd);
         printf("GPGPU-Sim PTX: parser error detected, exiting... but first extracting .ptx to \"%s\"\n", fname);
         FILE *ptxfile = fopen(fname,"w");
-        fprintf(ptxfile,"%s", p_temp.c_str());
+        fprintf(ptxfile,"%s", p);
         fclose(ptxfile);
         abort();
         exit(40);
