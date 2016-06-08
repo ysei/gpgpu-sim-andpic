@@ -378,13 +378,17 @@ void stream_manager::push( stream_operation op )
     if( m_cuda_launch_blocking || stream == NULL ) {
         unsigned int wait_amount = 100; 
         unsigned int wait_cap = 100000; // 100ms 
+        bool simmode = false;
         while( !empty() ) {
             // sleep to prevent CPU hog by empty spin
             // sleep time increased exponentially ensure fast response when needed 
             usleep(wait_amount); 
             wait_amount *= 2; 
-            if (wait_amount > wait_cap) 
-               wait_amount = wait_cap; 
+            if (wait_amount > wait_cap) {
+               // carry out the operation
+               wait_amount = 100;
+               operation(&simmode);
+            }
         }
     }
 }
